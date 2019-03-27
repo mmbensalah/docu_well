@@ -6,17 +6,11 @@ describe 'the insurance endpoints' do
     user      = create(:user)
     profile   = create(:profile, user_id: user.id )
 
-    insurance_type = "medical"
-    carrier = "Aetna"
-    id_number = "abc123"
-    group_number = "def456"
-    phone_number = "800-111-1111"
-
-    data = {insurance_type: insurance_type,
-            carrier: carrier,
-            id_number: id_number,
-            group_number: group_number,
-            phone_number: phone_number,
+    data = {insurance_type: "medical",
+            carrier: "Aetna",
+            id_number: "abc123",
+            group_number: "def456",
+            phone_number: "800-111-1111",
             profile_id: profile.id}
 
     post "/api/v1/insurances?api_key=#{user.api_key}", params: data
@@ -33,22 +27,35 @@ describe 'the insurance endpoints' do
     expect(data[:attributes].keys.include?(:profile_id)).to be(true)
   end
 
+  it 'POST /insurances returns 409 when asked to create duplicate records' do
+    provider  = create(:provider)
+    user      = create(:user)
+    profile   = create(:profile, user_id: user.id )
+
+    data = {insurance_type: "medical",
+            carrier: "Aetna",
+            id_number: "abc123",
+            group_number: "def456",
+            phone_number: "800-111-1111",
+            profile_id: profile.id}
+
+    post "/api/v1/insurances?api_key=#{user.api_key}", params: data
+    post "/api/v1/insurances?api_key=#{user.api_key}", params: data
+    expect(response.status).to eq 409
+    data = JSON.parse(response.body)
+    expect(data["message"]).to eq("Duplicate record")
+  end
+
   it 'POST /insurances returns error w/o api key' do
     provider  = create(:provider)
     user      = create(:user)
     profile   = create(:profile, user_id: user.id)
 
-    insurance_type = "medical"
-    carrier = "Aetna"
-    id_number = "abc123"
-    group_number = "def456"
-    phone_number = "800-111-1111"
-
-    data = {insurance_type: insurance_type,
-            carrier: carrier,
-            id_number: id_number,
-            group_number: group_number,
-            phone_number: phone_number,
+    data = {insurance_type: "medical",
+            carrier: "Aetna",
+            id_number: "abc123",
+            group_number: "def456",
+            phone_number: "800-111-1111",
             profile_id: profile.id}
 
     post "/api/v1/insurances", params: data
@@ -64,11 +71,18 @@ describe 'the insurance endpoints' do
     user1      = create(:user)
     profile    = create(:profile, user_id: user.id )
 
-    post "/api/v1/insurances?api_key=#{user1.api_key}", params: {profile_id: profile.id}
+    data = {insurance_type: "medical",
+      carrier: "Aetna",
+      id_number: "abc123",
+      group_number: "def456",
+      phone_number: "800-111-1111",
+      profile_id: profile.id}
+
+    post "/api/v1/insurances?api_key=#{user1.api_key}", params: data
 
     expect(response.status).to eq 400
     data = JSON.parse(response.body)
-    expect(data["message"]).to eq("Bad data")
+    expect(data["message"]).to eq("Bad API key")
   end
 
   it 'GET /insurances returns all insurance objects in json' do
